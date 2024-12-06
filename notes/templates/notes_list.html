@@ -7,119 +7,198 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
         }
+
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px;
             text-align: left;
         }
+
         th {
-            background-color: #f4f4f4;
+            background-color: #4CAF50;
+            color: white;
         }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
         .note-title {
             font-weight: bold;
+            color: #4CAF50;
         }
-        .form-container, .filter-container {
+
+        .filter-container, .form-container {
             margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f7f7f7;
         }
-        form {
+
+        .filter-container form, .form-container form {
             display: flex;
-            flex-direction: column;
-            width: 300px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        input, textarea, select, button {
-            margin-bottom: 10px;
+
+        .filter-container form input,
+        .filter-container form select,
+        .form-container form input,
+        .form-container form textarea,
+        .form-container form select,
+        .form-container form button {
+            flex: 1;
+            min-width: 200px;
             padding: 10px;
             font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
-        button {
+
+        .filter-container form button,
+        .form-container form button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
-        button:hover {
-            background-color: #f0f0f0;
+
+        .filter-container form button:hover,
+        .form-container form button:hover {
+            background-color: #45a049;
         }
-        .actions {
-            display: flex;
-            gap: 5px;
+
+        .actions button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .actions button:hover {
+            background-color: #0b7dda;
+        }
+
+        .actions form button {
+            background-color: #f44336;
+        }
+
+        .actions form button:hover {
+            background-color: #d32f2f;
         }
     </style>
 </head>
 <body>
-    <h1>Notes</h1>
+    <div class="container">
+        <h1>Notes</h1>
 
-    <!-- Фильтры -->
-    <div class="filter-container">
-        <form method="get" action="{% url 'notes_list' %}">
-            <input type="text" name="search" placeholder="Search notes..." value="{{ search_query }}">
-            <select name="category">
-                <option value="">All Categories</option>
-                <option value="Work" {% if category == 'Work' %}selected{% endif %}>Work</option>
-                <option value="Personal" {% if category == 'Personal' %}selected{% endif %}>Personal</option>
-                <option value="Other" {% if category == 'Other' %}selected{% endif %}>Other</option>
-            </select>
-            <select name="ordering">
-                <option value="-created_at" {% if ordering == '-created_at' %}selected{% endif %}>Newest First</option>
-                <option value="created_at" {% if ordering == 'created_at' %}selected{% endif %}>Oldest First</option>
-            </select>
-            <button type="submit">Apply Filters</button>
-        </form>
+        <!-- Фильтры -->
+        <div class="filter-container">
+            <form method="get" action="{% url 'notes_list' %}">
+                <input type="text" name="search" placeholder="Search notes..." value="{{ search_query }}">
+                <select name="category">
+                    <option value="">All Categories</option>
+                    <option value="Work" {% if category == 'Work' %}selected{% endif %}>Work</option>
+                    <option value="Personal" {% if category == 'Personal' %}selected{% endif %}>Personal</option>
+                    <option value="Other" {% if category == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+                <select name="ordering">
+                    <option value="-created_at" {% if ordering == '-created_at' %}selected{% endif %}>Newest First</option>
+                    <option value="created_at" {% if ordering == 'created_at' %}selected{% endif %}>Oldest First</option>
+                </select>
+                <button type="submit">Apply Filters</button>
+            </form>
+        </div>
+
+        <!-- Форма создания/редактирования -->
+        <div class="form-container">
+            <h2>Create/Edit Note</h2>
+            <form id="note-form" method="post" action="{% url 'create_note' %}">
+                {% csrf_token %}
+                <input type="hidden" name="id" id="note-id">
+                <input type="text" name="title" id="note-title" placeholder="Title" required>
+                <textarea name="content" id="note-content" placeholder="Content" required></textarea>
+                <select name="category" id="note-category">
+                    <option value="Work">Work</option>
+                    <option value="Personal">Personal</option>
+                    <option value="Other">Other</option>
+                </select>
+                <button type="submit">Save Note</button>
+            </form>
+        </div>
+
+        <!-- Таблица заметок -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Content</th>
+                    <th>Category</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for note in notes %}
+                <tr>
+                    <td class="note-title">{{ note.title }}</td>
+                    <td>{{ note.content }}</td>
+                    <td>{{ note.category }}</td>
+                    <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
+                    <td class="actions">
+                        <button type="button" onclick="editNote('{{ note.id }}', '{{ note.title|escapejs }}', '{{ note.content|escapejs }}', '{{ note.category }}')">Edit</button>
+                        <form method="post" action="{% url 'delete_note' note.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this note?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No notes available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <!-- Форма создания/редактирования -->
-    <div class="form-container">
-        <h2>Create/Edit Note</h2>
-        <form id="note-form" method="post" action="{% url 'create_note' %}">
-            {% csrf_token %}
-            <input type="hidden" name="id" id="note-id">
-            <input type="text" name="title" id="note-title" placeholder="Title" required>
-            <textarea name="content" id="note-content" placeholder="Content" required></textarea>
-            <select name="category" id="note-category">
-                <option value="Work">Work</option>
-                <option value="Personal">Personal</option>
-                <option value="Other">Other</option>
-            </select>
-            <button type="submit">Save Note</button>
-        </form>
-    </div>
-
-    <!-- Таблица заметок -->
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Content</th>
-                <th>Category</th>
-                <th>Created At</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for note in notes %}
-            <tr>
-                <td class="note-title">{{ note.title }}</td>
-                <td>{{ note.content }}</td>
-                <td>{{ note.category }}</td>
-                <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
-                <td class="actions">
-                    <button type="button" onclick="editNote('{{ note.id }}', '{{ note.title|escapejs }}', '{{ note.content|escapejs }}', '{{ note.category }}')">Edit</button>
-                    <form method="post" action="{% url 'delete_note' note.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" onclick="return confirm('Are you sure you want to delete this note?')">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">No notes available.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 
     <!-- Скрипт для редактирования -->
     <script>
