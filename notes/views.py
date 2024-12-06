@@ -2,42 +2,24 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect
-from .models import Note
-from .serializers import NoteSerializer
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-from .models import Note
-from .serializers import NoteSerializer
-from django.shortcuts import render
 from django.db.models import Q
-
+from .models import Note
+from .serializers import NoteSerializer
 
 class NoteListView(APIView):
-    """
-    API для отображения списка заметок, создания новой заметки,
-    фильтрации, поиска и упорядочивания.
-    """
     def get(self, request):
-        # Получение параметров запроса
         search_query = request.GET.get('search', None)
         category = request.GET.get('category', None)
-        ordering = request.GET.get('ordering', '-created_at')  # По умолчанию: новые заметки первыми
+        ordering = request.GET.get('ordering', '-created_at')
 
         notes = Note.objects.all()
 
-        # Фильтрация по категории
         if category:
             notes = notes.filter(category=category)
 
-        # Поиск по названию и содержимому
         if search_query:
             notes = notes.filter(Q(title__icontains=search_query) | Q(content__icontains=search_query))
 
-        # Упорядочивание
         notes = notes.order_by(ordering)
 
         serializer = NoteSerializer(notes, many=True)
@@ -50,11 +32,7 @@ class NoteListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class NoteDetailView(APIView):
-    """
-    API для редактирования и удаления заметки.
-    """
     def get_object(self, pk):
         return get_object_or_404(Note, pk=pk)
 
@@ -71,6 +49,11 @@ class NoteDetailView(APIView):
         note.delete()
         return Response({"message": "Note deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Note
+from .forms import NoteForm
+from django.db.models import Q
 
 def notes_list(request):
     search_query = request.GET.get('search', '')
@@ -94,11 +77,28 @@ def notes_list(request):
         'ordering': ordering
     })
 
+def create_note(request):
+    if request.method == "POST":
+        form = NoteForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('notes_list')
+    else:
+        form = NoteForm()
+    return render(request, 'note_form.html', {'form': form})
+
+def edit_note(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+    if request.method == "POST":
+        form = NoteForm(request.POST, instance=note)
+        if form.is_valid():
+            form.save()
+            return redirect('notes_list')
+    else:
+        form = NoteForm(instance=note)
+    return render(request, 'note_form.html', {'form': form})
 
 def delete_note(request, note_id):
-    """
-    Удаление заметки через HTML.
-    """
     note = get_object_or_404(Note, id=note_id)
     note.delete()
-    return HttpResponseRedirect('/notes/')
+    return redirect('notes_list')

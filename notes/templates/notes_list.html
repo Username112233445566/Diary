@@ -16,6 +16,7 @@
         th, td {
             border: 1px solid #ddd;
             padding: 8px;
+            text-align: left;
         }
         th {
             background-color: #f4f4f4;
@@ -23,7 +24,7 @@
         .note-title {
             font-weight: bold;
         }
-        .form-container {
+        .form-container, .filter-container {
             margin-bottom: 20px;
         }
         form {
@@ -31,16 +32,27 @@
             flex-direction: column;
             width: 300px;
         }
-        input, textarea, button {
+        input, textarea, select, button {
             margin-bottom: 10px;
             padding: 10px;
             font-size: 16px;
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #f0f0f0;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
         }
     </style>
 </head>
 <body>
     <h1>Notes</h1>
 
+    <!-- Фильтры -->
     <div class="filter-container">
         <form method="get" action="{% url 'notes_list' %}">
             <input type="text" name="search" placeholder="Search notes..." value="{{ search_query }}">
@@ -58,24 +70,31 @@
         </form>
     </div>
 
+    <!-- Форма создания/редактирования -->
     <div class="form-container">
         <h2>Create/Edit Note</h2>
-        <form id="note-form" method="post" action="{% url 'notes_list' %}">
+        <form id="note-form" method="post" action="{% url 'create_note' %}">
             {% csrf_token %}
             <input type="hidden" name="id" id="note-id">
             <input type="text" name="title" id="note-title" placeholder="Title" required>
             <textarea name="content" id="note-content" placeholder="Content" required></textarea>
+            <select name="category" id="note-category">
+                <option value="Work">Work</option>
+                <option value="Personal">Personal</option>
+                <option value="Other">Other</option>
+            </select>
             <button type="submit">Save Note</button>
         </form>
     </div>
 
+    <!-- Таблица заметок -->
     <table>
         <thead>
             <tr>
                 <th>Title</th>
                 <th>Content</th>
+                <th>Category</th>
                 <th>Created At</th>
-                <th>Updated At</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -84,10 +103,10 @@
             <tr>
                 <td class="note-title">{{ note.title }}</td>
                 <td>{{ note.content }}</td>
-                <td>{{ note.created_at }}</td>
-                <td>{{ note.updated_at }}</td>
-                <td>
-                    <button onclick="editNote('{{ note.id }}', '{{ note.title }}', '{{ note.content }}')">Edit</button>
+                <td>{{ note.category }}</td>
+                <td>{{ note.created_at|date:"Y-m-d H:i" }}</td>
+                <td class="actions">
+                    <button type="button" onclick="editNote('{{ note.id }}', '{{ note.title|escapejs }}', '{{ note.content|escapejs }}', '{{ note.category }}')">Edit</button>
                     <form method="post" action="{% url 'delete_note' note.id %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" onclick="return confirm('Are you sure you want to delete this note?')">Delete</button>
@@ -102,11 +121,14 @@
         </tbody>
     </table>
 
+    <!-- Скрипт для редактирования -->
     <script>
-        function editNote(id, title, content) {
+        function editNote(id, title, content, category) {
             document.getElementById('note-id').value = id;
             document.getElementById('note-title').value = title;
             document.getElementById('note-content').value = content;
+            document.getElementById('note-category').value = category;
+            document.getElementById('note-form').action = `{% url 'edit_note' 0 %}`.replace('0', id);
         }
     </script>
 </body>
